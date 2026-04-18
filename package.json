@@ -1,78 +1,25 @@
 {
-    "name":  "vanta-flow",
-    "version":  "1.2.0",
-    "private":  true,
-    "license":  "MIT",
-    "description":  "Vanta Flow — задачи и привычки",
-    "author":  "ESLL",
-    "keywords":  [
-                     "todo",
-                     "habits",
-                     "pwa",
-                     "electron",
-                     "react",
-                     "productivity"
-                 ],
-    "main":  "electron/main.cjs",
-    "dependencies":  {
-                         "css-loader":  "^7.1.4",
-                         "html-webpack-plugin":  "^5.6.7",
-                         "react":  "^18.3.1",
-                         "react-dom":  "^18.3.1",
-                         "style-loader":  "^4.0.0",
-                         "ts-loader":  "^9.5.7",
-                         "webpack":  "^5.106.2",
-                         "webpack-cli":  "^7.0.2",
-                         "webpack-dev-server":  "^5.2.3"
-                     },
-    "devDependencies":  {
-                            "@types/react":  "^19.2.14",
-                            "@types/react-dom":  "^19.2.3",
-                            "electron":  "^33.2.0",
-                            "electron-builder":  "^25.1.8",
-                            "sharp":  "^0.33.5",
-                            "typescript":  "^5.9.3"
-                        },
-    "scripts":  {
-                    "start":  "webpack serve --mode development --open",
-                    "build":  "webpack --mode production",
-                    "icons":  "node scripts/generate-app-icon.cjs",
-                    "prebuild:electron":  "node scripts/generate-app-icon.cjs",
-                    "build:electron":  "webpack --mode production --env electron",
-                    "electron":  "npm run build:electron \u0026\u0026 electron .",
-                    "dist:win":  "npm run build:electron \u0026\u0026 electron-builder --win --publish never"
-                },
-    "build":  {
-                  "appId":  "com.esll.vantaflow",
-                  "productName":  "Vanta Flow",
-                  "icon":  "electron/app-icon.png",
-                  "directories":  {
-                                      "output":  "release"
-                                  },
-                  "files":  [
-                                "dist/**/*",
-                                "electron/**/*"
-                            ],
-                  "win":  {
-                              "target":  [
-                                             {
-                                                 "target":  "nsis",
-                                                 "arch":  [
-                                                              "x64"
-                                                          ]
-                                             }
-                                         ]
-                          },
-                  "nsis":  {
-                               "oneClick":  false,
-                               "allowToChangeInstallationDirectory":  true,
-                               "createDesktopShortcut":  true,
-                               "createStartMenuShortcut":  true
-                           }
-              },
-    "homepage":  "https://github.com/wxrrry/Vanta-Flow---Tasks-and-habits",
-    "repository":  {
-                       "type":  "git",
-                       "url":  "https://github.com/wxrrry/Vanta-Flow---Tasks-and-habits.git"
-                   }
+  "name": "todo-habit-tracker",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "css-loader": "^7.1.4",
+    "html-webpack-plugin": "^5.6.7",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "style-loader": "^4.0.0",
+    "ts-loader": "^9.5.7",
+    "webpack": "^5.106.2",
+    "webpack-cli": "^7.0.2",
+    "webpack-dev-server": "^5.2.3"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "typescript": "^5.9.3"
+  },
+  "scripts": {
+    "start": "webpack serve --mode development --open",
+    "build": "webpack --mode production"
+  }
 }

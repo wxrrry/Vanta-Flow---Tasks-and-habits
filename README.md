@@ -1,73 +1,50 @@
-﻿# Vanta Flow — Tasks & Habits
+﻿# Vanta Flow — ToDo & Habit Tracker
 
-> Современное приложение для управления задачами, привычками и целями, собранное с любовью.
-
-[![CI](https://github.com/wxrrry/Vanta-Flow---Tasks-and-habits/actions/workflows/ci.yml/badge.svg)](https://github.com/wxrrry/Vanta-Flow---Tasks-and-habits/actions/workflows/ci.yml)
-[![Release](https://github.com/wxrrry/Vanta-Flow---Tasks-and-habits/actions/workflows/release.yml/badge.svg)](https://github.com/wxrrry/Vanta-Flow---Tasks-and-habits/actions/workflows/release.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+Современное приложение для управления задачами и отслеживания привычек. Доступно как **веб-приложение (PWA)** и как **десктопное приложение (Electron)**.
 
 ---
 
-## Скачать
+## Стек технологий
 
-**[⬇ Скачать последнюю версию для Windows](https://github.com/wxrrry/Vanta-Flow---Tasks-and-habits/releases/latest)**
-
-Скачайте `Vanta Flow Setup x.x.x.exe`, запустите установщик и готово.
-Не требует .NET, Java или других зависимостей.
+- **React 18** + **TypeScript 5**
+- **Webpack 5** — сборка
+- **Electron** — десктоп-версия
+- **LocalStorage** — хранение данных
+- **PWA** (Service Worker, манифест) — установка в браузере
+- CSS с glassmorphism и тёмной темой
 
 ---
 
 ## Возможности
 
-| Раздел | Что умеет |
-|---|---|
-| **ToDo** | Задачи с подзадачами, приоритеты, категории, сроки, drag-and-drop |
-| **Привычки** | Серии и статус (streak), heatmap, быстрое выполнение |
-| **Цели** | Compass: визуальный обзор целей и прогресс по каждой |
-| **Flow** | Режим фокуса, таймер Помодоро и настройки фокуса |
-| **Архив** | Архивные завершённые записи + дата завершения |
-| **Настройки** | Выбор темы оформления и настройки по вкусу |
-| **Архив / Корзина** | Удалённые записи временно хранятся в корзине |
-| **Параметры** | Тема, настройки приложения |
-| **Дашборд** | Сводная статистика задач и привычек по текущей неделе |
+### Задачи (ToDo)
+- Добавление, редактирование, удаление задач
+- **Приоритеты** (низкий / средний / высокий) с цветовой индикацией
+- **Категории / теги** с цветовой меткой и фильтрацией
+- **Дедлайны** — дата выполнения, сортировка и фильтрация по сроку
+- **Подзадачи** — вложенные чеклисты внутри задачи
+- **Заметки** — развёрнутое описание к каждой задаче
+- **Drag-and-drop** сортировка задач и подзадач
+- Фильтрация по статусу, приоритету, категории, сроку
+- Сохранение всего состояния в **LocalStorage**
 
-- Все данные хранятся в `localStorage` — без сервера, без регистрации
-- Тёмная тема с glassmorphism-дизайном
-- Electron-приложение: работает как нативная программа, без браузера
+### Привычки (Habit Tracker)
+- Добавление и отслеживание ежедневных привычек
+- Отметка выполнения за текущий день
+- Хранение истории выполнения
 
----
-
-## Разработка
-
-### Зависимости
-
-- Node.js 18+
-- npm 9+
-
-### Запуск в режиме разработки
-
-```bash
-# Установить зависимости
-npm install
-
-# Запустить webpack dev-сервер (веб-версия)
-npm start
-```
-
-### Сборка веб-версии
-
-```bash
-npm run build
-```
-
-### Сборка Electron-приложения (Windows)
-
-```bash
-# Создать .exe-установщик для Windows
-npm run dist:win
-```
-
-Готовый установщик появится в папке `release/`.
+### Дополнительно
+- **Быстрые шаблоны** задач и привычек
+- **Архив** и **Корзина** для завершённых / удалённых задач
+- **Календарь** — просмотр задач по дате
+- **Compass** — обзор целей
+- **Flow** — режим фокуса
+- **Dashboard** — сводная панель
+- **Настройки** (темы, параметры приложения)
+- Плавные анимации появления и переключения вкладок
+- Адаптивный дизайн (responsive)
+- **PWA**: устанавливается в браузере как приложение, работает офлайн
+- **Electron**: нативное десктопное приложение для Windows
 
 ---
 
@@ -75,49 +52,71 @@ npm run dist:win
 
 ```
 src/
-  App.tsx                  — корневой компонент, роутинг по вкладкам
+  App.tsx              — корневой компонент, табы, роутинг
+  App.css              — глобальные стили (glassmorphism, тёмная тема)
+  index.tsx            — точка входа React
   components/
-    TodoList.tsx           — список задач
-    HabitTracker.tsx       — трекер привычек
-    Dashboard.tsx          — дашборд / сводка
-    FlowView.tsx           — режим фокуса
-    CompassView.tsx        — трекер целей
-    CalendarView.tsx       — календарь и heatmap
-    ArchiveView.tsx        — архив
-    TrashView.tsx          — корзина
-    SettingsPanel.tsx      — настройки
+    TodoList.tsx        — список задач с полным функционалом
+    HabitTracker.tsx    — трекер привычек
+    Dashboard.tsx       — сводная панель
+    CalendarView.tsx    — календарь задач
+    ArchiveView.tsx     — архив завершённых задач
+    TrashView.tsx       — корзина удалённых задач
+    CompassView.tsx     — обзор целей
+    FlowView.tsx        — режим фокуса
+    SettingsPanel.tsx   — настройки приложения
+    SelectControl.tsx   — переиспользуемый select
+    dragAndDrop.tsx     — хук для drag-and-drop
   lib/
-    appStorage.ts          — чтение/запись localStorage
-    theme.ts               — управление темой
-    trashArchive.ts        — логика архива и корзины
+    appStorage.ts       — утилиты для LocalStorage
+    theme.ts            — управление темой
+    trashArchive.ts     — логика архива и корзины
+    dataEvents.ts       — события между компонентами
+    pwa.ts / pwaTypes.ts — PWA-регистрация
+    urlTab.ts / appTabId.ts — синхронизация вкладки через URL
+public/
+  index.html
+  manifest.webmanifest — PWA манифест
+  sw.js                — Service Worker
 electron/
-  main.cjs                 — точка входа Electron
+  main.cjs             — Electron main process
 ```
 
 ---
 
-## Релиз
-
-Новую версию можно опубликовать автоматически для всех пользователей:
+## Запуск (веб, разработка)
 
 ```bash
-git tag v1.0.1
-git push origin v1.0.1
+npm install
+npm start
 ```
 
-GitHub Actions соберёт установщик и опубликует его на вкладке [Releases](https://github.com/wxrrry/Vanta-Flow---Tasks-and-habits/releases).
+Откроется браузер на `http://localhost:8080`.
+
+## Сборка для продакшена (веб)
+
+```bash
+npm run build
+```
+
+Результат в папке `dist/`.
+
+## Сборка десктопного приложения (Electron, Windows)
+
+```bash
+npm run dist:win
+```
+
+Установщик появится в папке `release/`.
 
 ---
 
-## Стек
+## Данные
 
-- **React 18** + **TypeScript**
-- **Webpack 5**
-- **Electron 33**
-- **electron-builder** (NSIS-установщик для Windows)
+Все задачи, привычки и настройки хранятся локально в **LocalStorage** браузера (или приложения). Данные не отправляются на сервер.
 
 ---
 
 ## Лицензия
 
-[MIT](LICENSE) © ESLL
+MIT
