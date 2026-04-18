@@ -1,37 +1,8 @@
 import { useDraggableList } from './dragAndDrop';
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { notifyAppDataChanged } from '../lib/dataEvents';
-import { appendTrashTodo, appendArchiveTodo } from '../lib/trashArchive';
-import SelectControl, { type SelectOption } from './SelectControl';
 
 type Priority = 'high' | 'medium' | 'low';
 type Category = 'work' | 'home' | 'growth' | 'health' | 'hobby' | 'other';
-
-const PRIORITY_OPTIONS: SelectOption<Priority>[] = [
-  { value: 'high', label: 'Высокий' },
-  { value: 'medium', label: 'Средний' },
-  { value: 'low', label: 'Низкий' },
-];
-
-const CATEGORY_OPTIONS: SelectOption<Category>[] = [
-  { value: 'work', label: 'Работа/Учёба' },
-  { value: 'home', label: 'Быт/Дом' },
-  { value: 'growth', label: 'Личностный рост' },
-  { value: 'health', label: 'Здоровье' },
-  { value: 'hobby', label: 'Хобби' },
-  { value: 'other', label: 'Другое' },
-];
-
-const FILTER_CATEGORY_OPTIONS: SelectOption<Category | 'all'>[] = [
-  { value: 'all', label: 'Все' },
-  ...CATEGORY_OPTIONS,
-];
-
-const FILTER_DEADLINE_OPTIONS: SelectOption<'all' | 'today' | 'overdue'>[] = [
-  { value: 'all', label: 'Все' },
-  { value: 'today', label: 'На сегодня' },
-  { value: 'overdue', label: 'Просроченные' },
-];
 
 export interface Subtask {
   id: number;
@@ -61,11 +32,12 @@ const getInitialTodos = (): Todo[] => {
 
 const persistTodos = (next: Todo[]) => {
   localStorage.setItem('todos', JSON.stringify(next));
-  notifyAppDataChanged();
 };
 
 interface TodoListProps {
   inputRef?: React.RefObject<HTMLInputElement | null>;
+  templateText?: string;
+  onTemplateConsumed?: () => void;
 }
 
 function deadlineClassFor(todo: Todo): string {
@@ -87,8 +59,7 @@ interface TodoItemRowProps {
   saveNote: (id: number) => void;
   cancelNoteEdit: () => void;
   toggleTodo: (id: number) => void;
-  archiveTodo: (id: number) => void;
-  moveTodoToTrash: (id: number) => void;
+  removeTodo: (id: number) => void;
   addSubtask: (todoId: number, text: string) => void;
   toggleSubtask: (todoId: number, subtaskId: number) => void;
   removeSubtask: (todoId: number, subtaskId: number) => void;
@@ -108,8 +79,7 @@ const TodoItemRow: React.FC<TodoItemRowProps> = ({
   saveNote,
   cancelNoteEdit,
   toggleTodo,
-  archiveTodo,
-  moveTodoToTrash,
+  removeTodo,
   addSubtask,
   toggleSubtask,
   removeSubtask,
@@ -164,14 +134,9 @@ const TodoItemRow: React.FC<TodoItemRowProps> = ({
             {new Date(todo.deadline).toLocaleDateString()}
           </span>
         )}
-        <div className="todo-card__actions-inline">
-          <button type="button" className="btn-text btn-text--sm" onClick={() => archiveTodo(todo.id)}>
-            Архив
-          </button>
-          <button type="button" className="icon-btn danger" onClick={() => moveTodoToTrash(todo.id)} aria-label="В корзину">
-            ✕
-          </button>
-        </div>
+        <button type="button" className="icon-btn danger" onClick={() => removeTodo(todo.id)} aria-label="Удалить задачу">
+          ✕
+        </button>
       </div>
 
       <div className="note-block">
@@ -256,7 +221,7 @@ const TodoItemRow: React.FC<TodoItemRowProps> = ({
   );
 };
 
-const TodoList: React.FC<TodoListProps> = ({ inputRef }) => {
+const TodoList: React.FC<TodoListProps> = ({ inputRef, templateText, onTemplateConsumed }) => {
   const [todos, setTodos] = useState<Todo[]>(getInitialTodos);
   const [input, setInput] = useState('');
   const [priority, setPriority] = useState<Priority>('medium');
@@ -270,6 +235,12 @@ const TodoList: React.FC<TodoListProps> = ({ inputRef }) => {
   const [editingNoteId, setEditingNoteId] = useState<number | null>(null);
 
   const [todoOrder, setTodoOrder] = useState<number[]>([]);
+
+  useEffect(() => {
+    if (templateText === undefined) return;
+    setInput(templateText);
+    onTemplateConsumed?.();
+  }, [templateText, onTemplateConsumed]);
 
   const filteredTodos = useMemo(() => {
     let list = todos;
@@ -409,29 +380,14 @@ const TodoList: React.FC<TodoListProps> = ({ inputRef }) => {
     updateTodos(prev => prev.map(todo => (todo.id === id ? { ...todo, completed: !todo.completed } : todo)));
   };
 
-  const archiveTodo = (id: number) => {
-    updateTodos(prev => {
-      const todo = prev.find(t => t.id === id);
-      if (!todo) return prev;
-      appendArchiveTodo(todo);
-      return prev.filter(t => t.id !== id);
-    });
-  };
-
-  const moveTodoToTrash = (id: number) => {
-    updateTodos(prev => {
-      const todo = prev.find(t => t.id === id);
-      if (!todo) return prev;
-      appendTrashTodo(todo);
-      return prev.filter(t => t.id !== id);
-    });
+  const removeTodo = (id: number) => {
+    updateTodos(prev => prev.filter(todo => todo.id !== id));
   };
 
   const todayMin = new Date().toISOString().slice(0, 10);
 
   return (
     <div className="todo-list">
-      <div className="content-shell">
       <h2>ToDo-лист</h2>
       <div className="todo-input">
         <input
@@ -442,20 +398,29 @@ const TodoList: React.FC<TodoListProps> = ({ inputRef }) => {
           placeholder="Новая задача..."
           aria-label="Текст новой задачи"
         />
-        <SelectControl
+        <select
           value={priority}
-          onChange={setPriority}
-          options={PRIORITY_OPTIONS}
-          className="priority-select-wrap"
-          ariaLabel="Приоритет"
-        />
-        <SelectControl
+          onChange={e => setPriority(e.target.value as Priority)}
+          className="priority-select"
+          aria-label="Приоритет"
+        >
+          <option value="high">Высокий</option>
+          <option value="medium">Средний</option>
+          <option value="low">Низкий</option>
+        </select>
+        <select
           value={category}
-          onChange={setCategory}
-          options={CATEGORY_OPTIONS}
-          className="category-select-wrap"
-          ariaLabel="Категория"
-        />
+          onChange={e => setCategory(e.target.value as Category)}
+          className="category-select"
+          aria-label="Категория"
+        >
+          <option value="work">Работа/Учёба</option>
+          <option value="home">Быт/Дом</option>
+          <option value="growth">Личностный рост</option>
+          <option value="health">Здоровье</option>
+          <option value="hobby">Хобби</option>
+          <option value="other">Другое</option>
+        </select>
         <input
           type="date"
           className="deadline-input"
@@ -479,21 +444,31 @@ const TodoList: React.FC<TodoListProps> = ({ inputRef }) => {
       </div>
       <div className="todo-filters">
         <span>Категория:</span>
-        <SelectControl
+        <select
           value={filterCategory}
-          onChange={setFilterCategory}
-          options={FILTER_CATEGORY_OPTIONS}
-          className="category-select-wrap"
-          ariaLabel="Фильтр по категории"
-        />
+          onChange={e => setFilterCategory(e.target.value as Category | 'all')}
+          className="category-select"
+          aria-label="Фильтр по категории"
+        >
+          <option value="all">Все</option>
+          <option value="work">Работа/Учёба</option>
+          <option value="home">Быт/Дом</option>
+          <option value="growth">Личностный рост</option>
+          <option value="health">Здоровье</option>
+          <option value="hobby">Хобби</option>
+          <option value="other">Другое</option>
+        </select>
         <span>Дедлайн:</span>
-        <SelectControl
+        <select
           value={filterDeadline}
-          onChange={setFilterDeadline}
-          options={FILTER_DEADLINE_OPTIONS}
-          className="deadline-select-wrap"
-          ariaLabel="Фильтр по дедлайну"
-        />
+          onChange={e => setFilterDeadline(e.target.value as 'all' | 'today' | 'overdue')}
+          className="deadline-select"
+          aria-label="Фильтр по дедлайну"
+        >
+          <option value="all">Все</option>
+          <option value="today">На сегодня</option>
+          <option value="overdue">Просроченные</option>
+        </select>
       </div>
       <ul className="todo-cards">
         {sortedTodos.map((todo, idx) => (
@@ -508,8 +483,7 @@ const TodoList: React.FC<TodoListProps> = ({ inputRef }) => {
             saveNote={saveNote}
             cancelNoteEdit={cancelNoteEdit}
             toggleTodo={toggleTodo}
-            archiveTodo={archiveTodo}
-            moveTodoToTrash={moveTodoToTrash}
+            removeTodo={removeTodo}
             addSubtask={addSubtask}
             toggleSubtask={toggleSubtask}
             removeSubtask={removeSubtask}
@@ -520,12 +494,7 @@ const TodoList: React.FC<TodoListProps> = ({ inputRef }) => {
           />
         ))}
       </ul>
-      {sortedTodos.length === 0 && (
-        <p className="empty-hint">
-          Пока пусто: добавьте задачу в поле выше или смягчите фильтры — возможно, список просто отфильтрован.
-        </p>
-      )}
-      </div>
+      {sortedTodos.length === 0 && <p className="empty-hint">Нет задач по выбранным фильтрам. Добавьте новую или смените фильтр.</p>}
     </div>
   );
 };

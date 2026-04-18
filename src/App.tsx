@@ -1,105 +1,82 @@
-import React, { useState, useLayoutEffect, useEffect } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import TodoList from './components/TodoList';
 import HabitTracker from './components/HabitTracker';
-import Dashboard from './components/Dashboard';
-import CalendarView from './components/CalendarView';
-import SettingsPanel from './components/SettingsPanel';
-import TrashView from './components/TrashView';
-import ArchiveView from './components/ArchiveView';
-import FlowView from './components/FlowView';
-import CompassView from './components/CompassView';
-import { applyTheme, getStoredTheme } from './lib/theme';
-import { replaceUrlTab, parseTabFromSearch } from './lib/urlTab';
-import type { AppTabId } from './lib/appTabId';
-import { TAB_ICONS } from './tabIcons';
+import TemplatesModal from './components/TemplatesModal';
 import './App.css';
 
-export type { AppTabId };
-
-const TABS: { id: AppTabId; label: string }[] = [
-  { id: 'overview', label: 'Обзор' },
-  { id: 'flow', label: 'Поток' },
-  { id: 'compass', label: 'Компас' },
-  { id: 'todo', label: 'Задачи' },
-  { id: 'habits', label: 'Привычки' },
-  { id: 'calendar', label: 'Календарь' },
-  { id: 'archive', label: 'Архив' },
-  { id: 'trash', label: 'Корзина' },
-  { id: 'settings', label: 'Настройки' },
+const TABS = [
+  { id: 'todo' as const, label: 'ToDo-лист' },
+  { id: 'habits' as const, label: 'Трекер привычек' },
 ];
 
 const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<AppTabId>(() => parseTabFromSearch(window.location.search) ?? 'overview');
+  const [activeTab, setActiveTab] = useState<'todo' | 'habits'>('todo');
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalType, setModalType] = useState<'todo' | 'habit'>('todo');
+  const [todoTemplateText, setTodoTemplateText] = useState<string | undefined>(undefined);
+  const [habitTemplateText, setHabitTemplateText] = useState<string | undefined>(undefined);
 
-  useLayoutEffect(() => {
-    applyTheme(getStoredTheme());
-  }, []);
+  const todoInputRef = useRef<HTMLInputElement | null>(null);
+  const habitInputRef = useRef<HTMLInputElement | null>(null);
 
-  useEffect(() => {
-    replaceUrlTab(activeTab);
-  }, [activeTab]);
+  const clearTodoTemplate = useCallback(() => setTodoTemplateText(undefined), []);
+  const clearHabitTemplate = useCallback(() => setHabitTemplateText(undefined), []);
 
-  /** Alt+Shift+V — перейти на «Обзор», когда фокус не в поле ввода (как быстрый «виджет» внутри окна) */
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (!e.altKey || !e.shiftKey || e.ctrlKey || e.metaKey) return;
-      if (e.code !== 'KeyV' && e.key !== 'v' && e.key !== 'V') return;
-      const el = e.target as HTMLElement | null;
-      if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT' || el.isContentEditable)) {
-        return;
-      }
-      e.preventDefault();
-      setActiveTab('overview');
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, []);
+  const handleTemplateSelect = (text: string) => {
+    if (modalType === 'todo') {
+      setTodoTemplateText(text);
+      requestAnimationFrame(() => todoInputRef.current?.focus());
+    } else {
+      setHabitTemplateText(text);
+      requestAnimationFrame(() => habitInputRef.current?.focus());
+    }
+  };
 
   return (
-    <>
-      <div className="app-container">
-        <header className="app-header">
-          <p className="app-brand">Vanta Flow</p>
-          <h1 className="app-title">Задачи и привычки</h1>
-        </header>
-        <div className="main-content" role="tabpanel">
-          {activeTab === 'overview' && <Dashboard />}
-          {activeTab === 'flow' && <FlowView />}
-          {activeTab === 'compass' && <CompassView />}
-          {activeTab === 'todo' && <TodoList />}
-          {activeTab === 'habits' && <HabitTracker />}
-          {activeTab === 'calendar' && <CalendarView />}
-          {activeTab === 'archive' && <ArchiveView />}
-          {activeTab === 'trash' && <TrashView />}
-          {activeTab === 'settings' && <SettingsPanel />}
-        </div>
-        <footer className="app-footer">
-          <p className="app-credit">\\ digital piece by ESLL</p>
-        </footer>
+    <div className="app-container">
+      <header className="app-header">
+        <h1>Задачи и привычки</h1>
+        <p className="app-tagline">Локальное хранение в браузере — без регистрации</p>
+      </header>
+      <div className="tabs" role="tablist" aria-label="Разделы приложения">
+        {TABS.map(tab => (
+          <button
+            key={tab.id}
+            type="button"
+            role="tab"
+            aria-selected={activeTab === tab.id}
+            className={activeTab === tab.id ? 'tab active' : 'tab'}
+            onClick={() => setActiveTab(tab.id)}
+          >
+            {tab.label}
+          </button>
+        ))}
+        <button
+          type="button"
+          className="tab template-btn"
+          onClick={() => {
+            setModalType(activeTab === 'todo' ? 'todo' : 'habit');
+            setModalOpen(true);
+          }}
+        >
+          Шаблоны
+        </button>
       </div>
-      <div className="bottom-nav-dock">
-        <nav className="bottom-nav" role="navigation" aria-label="Основные разделы">
-          <div className="bottom-nav__scroll" role="tablist">
-            {TABS.map(tab => {
-              const isActive = activeTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  type="button"
-                  role="tab"
-                  aria-selected={isActive}
-                  className={`bottom-nav__btn${isActive ? ' bottom-nav__btn--active' : ''}`}
-                  onClick={() => setActiveTab(tab.id)}
-                >
-                  <span className="bottom-nav__icon">{TAB_ICONS[tab.id]}</span>
-                  <span className="bottom-nav__label">{tab.label}</span>
-                </button>
-              );
-            })}
-          </div>
-        </nav>
+      <div className="main-content" role="tabpanel">
+        {activeTab === 'todo' && (
+          <TodoList inputRef={todoInputRef} templateText={todoTemplateText} onTemplateConsumed={clearTodoTemplate} />
+        )}
+        {activeTab === 'habits' && (
+          <HabitTracker inputRef={habitInputRef} templateText={habitTemplateText} onTemplateConsumed={clearHabitTemplate} />
+        )}
       </div>
-    </>
+      <TemplatesModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onSelect={handleTemplateSelect}
+        type={modalType}
+      />
+    </div>
   );
 };
 
