@@ -20,6 +20,7 @@ export interface Habit {
   streak: number;
   lastCompletedDate?: string;
   bestStreak?: number;
+  completedDates?: string[];
 }
 
 const STORAGE_KEY = 'habits';
