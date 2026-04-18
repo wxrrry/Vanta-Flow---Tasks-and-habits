@@ -40,7 +40,7 @@
                     "prebuild:electron":  "node scripts/generate-app-icon.cjs",
                     "build:electron":  "webpack --mode production --env electron",
                     "electron":  "npm run build:electron \u0026\u0026 electron .",
-                    "dist:win":  "npm run build:electron \u0026\u0026 electron-builder --win"
+                    "dist:win":  "npm run build:electron \u0026\u0026 electron-builder --win --publish never"
                 },
     "build":  {
                   "appId":  "com.esll.vantaflow",
