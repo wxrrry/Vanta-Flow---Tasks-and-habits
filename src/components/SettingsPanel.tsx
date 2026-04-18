@@ -263,6 +263,26 @@ const SettingsPanel: React.FC = () => {
           Очистить все данные
         </button>
       </section>
+
+      <section className="settings-section settings-about">
+        <h3>О приложении</h3>
+        <p className="settings-muted">Vanta Flow — задачи и привычки, хранятся локально в браузере.</p>
+        <a
+          href="https://github.com/wxrrry/Vanta-Flow---Tasks-and-habits/releases"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="settings-release-link"
+          onClick={e => {
+            const api = (window as Window & { electronAPI?: { openExternal?: (url: string) => void } }).electronAPI;
+            if (api?.openExternal) {
+              e.preventDefault();
+              api.openExternal('https://github.com/wxrrry/Vanta-Flow---Tasks-and-habits/releases');
+            }
+          }}
+        >
+          🚀 Следить за обновлениями на GitHub →
+        </a>
+      </section>
       </div>
     </div>
   );

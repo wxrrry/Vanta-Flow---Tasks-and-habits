@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { notifyAppDataChanged } from '../lib/dataEvents';
+import { appendTrashHabit, appendArchiveHabit } from '../lib/trashArchive';
 
 function localDateString(d = new Date()): string {
   const y = d.getFullYear();
@@ -20,6 +22,7 @@ export interface Habit {
   streak: number;
   lastCompletedDate?: string;
   bestStreak?: number;
+  /** Дни отметки YYYY-MM-DD (для календаря и статистики). */
   completedDates?: string[];
 }
 
@@ -33,10 +36,16 @@ const getInitialHabits = (): Habit[] => {
     return parsed.map(h => {
       const hadLegacyCounter = !h.lastCompletedDate && (h.streak || 0) > 0;
       const bestStreak = Math.max(typeof h.bestStreak === 'number' ? h.bestStreak : 0, h.streak || 0);
+      let completedDates = Array.isArray(h.completedDates) ? [...h.completedDates] : [];
+      if (completedDates.length === 0 && h.lastCompletedDate) {
+        completedDates = [h.lastCompletedDate];
+      }
+      completedDates = Array.from(new Set(completedDates)).sort();
       return {
         ...h,
         bestStreak,
         streak: hadLegacyCounter ? 0 : h.streak || 0,
+        completedDates: completedDates.length ? completedDates : undefined,
       };
     });
   } catch {
@@ -46,15 +55,21 @@ const getInitialHabits = (): Habit[] => {
 
 const persistHabits = (next: Habit[]) => {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+  notifyAppDataChanged();
 };
+
+const MAX_HISTORY_DATES = 400;
+
+function mergeCompletedDate(dates: string[] | undefined, day: string): string[] {
+  const next = Array.from(new Set([...(dates || []), day])).sort();
+  return next.slice(-MAX_HISTORY_DATES);
+}
 
 interface HabitTrackerProps {
   inputRef?: React.RefObject<HTMLInputElement | null>;
-  templateText?: string;
-  onTemplateConsumed?: () => void;
 }
 
-const HabitTracker: React.FC<HabitTrackerProps> = ({ inputRef, templateText, onTemplateConsumed }) => {
+const HabitTracker: React.FC<HabitTrackerProps> = ({ inputRef }) => {
   const [habits, setHabits] = useState<Habit[]>(getInitialHabits);
   const [input, setInput] = useState('');
   const [today, setToday] = useState(localDateString);
@@ -66,12 +81,6 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({ inputRef, templateText, onT
     }, 60_000);
     return () => window.clearInterval(id);
   }, []);
-
-  useEffect(() => {
-    if (templateText === undefined) return;
-    setInput(templateText);
-    onTemplateConsumed?.();
-  }, [templateText, onTemplateConsumed]);
 
   const updateHabits = useCallback((updater: (prev: Habit[]) => Habit[]) => {
     setHabits(prev => {
@@ -103,17 +112,33 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({ inputRef, templateText, onT
         }
 
         const bestStreak = Math.max(habit.bestStreak ?? 0, streak);
-        return { ...habit, streak, lastCompletedDate: today, bestStreak };
+        const completedDates = mergeCompletedDate(habit.completedDates, today);
+        return { ...habit, streak, lastCompletedDate: today, bestStreak, completedDates };
       })
     );
   };
 
-  const removeHabit = (id: number) => {
-    updateHabits(prev => prev.filter(h => h.id !== id));
+  const archiveHabit = (id: number) => {
+    updateHabits(prev => {
+      const h = prev.find(x => x.id === id);
+      if (!h) return prev;
+      appendArchiveHabit(h);
+      return prev.filter(x => x.id !== id);
+    });
+  };
+
+  const moveHabitToTrash = (id: number) => {
+    updateHabits(prev => {
+      const h = prev.find(x => x.id === id);
+      if (!h) return prev;
+      appendTrashHabit(h);
+      return prev.filter(x => x.id !== id);
+    });
   };
 
   return (
     <div className="habit-tracker">
+      <div className="content-shell">
       <h2>Трекер привычек</h2>
       <p className="habit-subtitle">Отмечайте выполнение раз в день — серия растёт подряд, при пропуске дня сбрасывается.</p>
       <div className="habit-input">
@@ -156,7 +181,10 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({ inputRef, templateText, onT
                 >
                   {doneToday ? 'Сегодня ✓' : 'Сегодня'}
                 </button>
-                <button type="button" className="icon-btn danger" onClick={() => removeHabit(habit.id)} aria-label="Удалить привычку">
+                <button type="button" className="btn-text btn-text--sm" onClick={() => archiveHabit(habit.id)}>
+                  Архив
+                </button>
+                <button type="button" className="icon-btn danger" onClick={() => moveHabitToTrash(habit.id)} aria-label="В корзину">
                   ✕
                 </button>
               </div>
@@ -164,7 +192,12 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({ inputRef, templateText, onT
           );
         })}
       </ul>
-      {habits.length === 0 && <p className="empty-hint">Добавьте первую привычку или выберите шаблон.</p>}
+      {habits.length === 0 && (
+        <p className="empty-hint">
+          Пока без привычек: введите короткое название выше и нажмите «Добавить» — потом отмечайте «Сегодня» по мере сил.
+        </p>
+      )}
+      </div>
     </div>
   );
 };

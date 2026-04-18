@@ -239,9 +239,6 @@ const FlowView: React.FC = () => {
         </div>
 
         <div className="flow-extra">
-          <label className="flow-ambient">
-            <input type="checkbox" checked={ambientOn} onChange={toggleAmbient} /> Тихий белый шум (в браузере)
-          </label>
           <p className="flow-stat">
             Фокус на этой неделе: <strong>{weekMin}</strong> мин.
           </p>

@@ -1,13 +1,15 @@
 {
   "compilerOptions": {
-    "target": "es6",
+    "target": "ES2017",
+    "lib": ["ES2017", "DOM", "DOM.Iterable"],
     "module": "esnext",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "jsx": "react-jsx",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
+    "rootDir": "./src",
     "outDir": "./dist"
   },
   "include": ["src"]

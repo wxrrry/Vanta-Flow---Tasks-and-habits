@@ -5,11 +5,32 @@ const CHECK_INTERVAL = 60_000; // check every minute
 
 let timerId: ReturnType<typeof setInterval> | null = null;
 
-function permissionGranted(): boolean {
-  return typeof Notification !== 'undefined' && Notification.permission === 'granted';
+type ElectronAPI = {
+  showNotification: (title: string, body: string) => void;
+  openExternal?: (url: string) => void;
+};
+
+function getElectronAPI(): ElectronAPI | null {
+  const w = window as Window & { electronAPI?: ElectronAPI };
+  return w.electronAPI ?? null;
+}
+
+function sendNotification(title: string, body: string): void {
+  // Try Electron native first (works in .exe, shows proper Windows toasts)
+  const api = getElectronAPI();
+  if (api) {
+    api.showNotification(title, body);
+    return;
+  }
+  // Web Notification API fallback (browser / PWA)
+  if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+    new Notification(title, { body, silent: false });
+  }
 }
 
 export function requestNotificationPermission(): void {
+  // In Electron the preload handles it; in browser request permission normally
+  if (getElectronAPI()) return;
   if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
     Notification.requestPermission();
   }
@@ -34,47 +55,34 @@ function markNotifiedToday(): void {
 }
 
 function checkAndNotify(): void {
-  if (!permissionGranted()) return;
+  // Need either Electron API or web permission
+  const hasElectron = !!getElectronAPI();
+  const hasWebNotif = typeof Notification !== 'undefined' && Notification.permission === 'granted';
+  if (!hasElectron && !hasWebNotif) return;
   if (alreadyNotifiedToday()) return;
 
   const today = todayStr();
   const todos = loadTodos();
   const habits = loadHabits();
 
-  // Overdue tasks
   const overdue = todos.filter(
     t => !t.completed && t.deadline && t.deadline.slice(0, 10) < today,
   );
-
-  // Tasks due today
   const dueToday = todos.filter(
     t => !t.completed && t.deadline && t.deadline.slice(0, 10) === today,
   );
-
-  // Incomplete habits today
   const incompleteHabits = habits.filter(
     h => !(h.completedDates ?? []).includes(today),
   );
 
   const lines: string[] = [];
-  if (overdue.length > 0) {
-    lines.push(`\u26A0 Просрочено задач: ${overdue.length}`);
-  }
-  if (dueToday.length > 0) {
-    lines.push(`\uD83D\uDCC5 На сегодня задач: ${dueToday.length}`);
-  }
-  if (incompleteHabits.length > 0) {
-    lines.push(`\uD83D\uDD25 Привычек не выполнено: ${incompleteHabits.length}`);
-  }
+  if (overdue.length > 0)        lines.push(`⚠ Просрочено задач: ${overdue.length}`);
+  if (dueToday.length > 0)       lines.push(`📅 На сегодня задач: ${dueToday.length}`);
+  if (incompleteHabits.length > 0) lines.push(`🔥 Привычек не выполнено: ${incompleteHabits.length}`);
 
   if (lines.length === 0) return;
 
-  new Notification('Vanta Flow', {
-    body: lines.join('\n'),
-    icon: '/icons/icon-192.png',
-    silent: false,
-  });
-
+  sendNotification('Vanta Flow', lines.join('\n'));
   markNotifiedToday();
 }
 

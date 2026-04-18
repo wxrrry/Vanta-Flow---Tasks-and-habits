@@ -1,13 +1,14 @@
 /**
  * Точка входа Electron: открывает собранный index.html из dist/
  */
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, ipcMain, Notification, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
 
 const isDev = process.env.VANTA_DEV === '1';
 
 const iconPath = path.join(__dirname, 'app-icon.png');
+const preloadPath = path.join(__dirname, 'preload.cjs');
 
 function createWindow() {
   const win = new BrowserWindow({
@@ -23,6 +24,7 @@ function createWindow() {
       nodeIntegration: false,
       contextIsolation: true,
       sandbox: true,
+      preload: preloadPath,
     },
     title: 'Vanta Flow - \\ digital piece by ESLL',
   });
@@ -37,6 +39,18 @@ function createWindow() {
     win.loadFile(indexHtml);
   }
 }
+
+// Native Windows notification via Electron
+ipcMain.on('show-notification', (_event, { title, body }) => {
+  if (Notification.isSupported()) {
+    const n = new Notification({
+      title: title || 'Vanta Flow',
+      body: body || '',
+      ...(fs.existsSync(iconPath) ? { icon: iconPath } : {}),
+    });
+    n.show();
+  }
+});
 
 app.whenReady().then(() => {
   createWindow();
