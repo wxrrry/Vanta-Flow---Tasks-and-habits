@@ -1,0 +1,34 @@
+# Dependencies
+node_modules/
+
+# Webpack / Electron build outputs
+dist/
+release/
+
+# Иконка генерируется из SVG при сборке Electron
+electron/app-icon.png
+
+# Logs and debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+.DS_Store
+Thumbs.db
+
+# Env and local secrets
+.env
+.env.*
+!.env.example
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+Desktop.ini
+
+# Optional: Cursor / local tooling (раскомментируйте при необходимости)
+# .cursor/

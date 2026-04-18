@@ -1,0 +1,52 @@
+{
+  "id": "./",
+  "name": "Vanta Flow — Задачи и привычки",
+  "short_name": "Vanta Flow",
+  "description": "Локальные задачи, привычки, компас недели и календарь в браузере.",
+  "start_url": "index.html",
+  "scope": ".",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#050a0e",
+  "theme_color": "#061218",
+  "lang": "ru",
+  "icons": [
+    {
+      "src": "icons/icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Задачи",
+      "short_name": "Задачи",
+      "description": "Открыть список задач",
+      "url": "index.html?tab=todo",
+      "icons": [{ "src": "icons/icon.svg", "sizes": "512x512", "type": "image/svg+xml" }]
+    },
+    {
+      "name": "Календарь",
+      "short_name": "Календарь",
+      "description": "Календарь дедлайнов",
+      "url": "index.html?tab=calendar",
+      "icons": [{ "src": "icons/icon.svg", "sizes": "512x512", "type": "image/svg+xml" }]
+    },
+    {
+      "name": "Поток",
+      "short_name": "Поток",
+      "description": "Таймер фокуса",
+      "url": "index.html?tab=flow",
+      "icons": [{ "src": "icons/icon.svg", "sizes": "512x512", "type": "image/svg+xml" }]
+    }
+  ],
+  "categories": ["productivity", "lifestyle"]
+}
